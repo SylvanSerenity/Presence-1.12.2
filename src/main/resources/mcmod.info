@@ -1,14 +1,14 @@
 [
 {
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "Example placeholder mod.",
+  "modid": "presence",
+  "name": "Presence",
+  "description": "A presence lingers in the darkness. Its unseen gaze fills you with dread. You are being watched.",
   "version": "${version}",
   "mcversion": "${mcversion}",
   "url": "",
   "updateUrl": "",
-  "authorList": ["ExampleDude"],
-  "credits": "The Forge and FML guys, for making this example",
+  "authorList": ["SylvanSerenity"],
+  "credits": "SylvanSerenity",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
