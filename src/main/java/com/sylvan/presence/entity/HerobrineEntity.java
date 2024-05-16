@@ -9,11 +9,17 @@ import net.minecraft.entity.Entity.RemovalReason;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.MovementType;
-import net.minecraft.entity.decoration.ArmorStandEntity;
+import net.minecraft.entity.decoration.EntityArmorStand;
+import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagFloat;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NbtFloat;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -29,46 +35,46 @@ import java.util.concurrent.TimeUnit;
 
 public class HerobrineEntity {
 	private final World world;
-	private final ArmorStandEntity headEntity;
-	private final ArmorStandEntity bodyEntity;
-	private final ArmorStandEntity armsEntity;
-	private final ArmorStandEntity legsEntity;
+	private final EntityArmorStand headEntity;
+	private final EntityArmorStand bodyEntity;
+	private final EntityArmorStand armsEntity;
+	private final EntityArmorStand legsEntity;
 
-	private static final NbtCompound headBodyCompound = new NbtCompound();
-	private static final NbtCompound legsCompound = new NbtCompound();
+	private static final NBTTagCompound headBodyCompound = new NBTTagCompound();
+	private static final NBTTagCompound legsCompound = new NBTTagCompound();
 	public static final Map<String, Integer> skins = new HashMap<>();
 
 	public static void initEntity() {
-		NbtList armPoseValues = new NbtList();
-		armPoseValues.add(NbtFloat.of(0.0f));
-		armPoseValues.add(NbtFloat.of(0.0f));
-		armPoseValues.add(NbtFloat.of(0.0f));
+		NBTTagList armPoseValues = new NBTTagList();
+		armPoseValues.appendTag(new NBTTagFloat(0.0f));
+		armPoseValues.appendTag(new NBTTagFloat(0.0f));
+		armPoseValues.appendTag(new NBTTagFloat(0.0f));
 
-		NbtCompound armLegPoseCompound = new NbtCompound();
-		armLegPoseCompound.put("LeftArm", armPoseValues);
-		armLegPoseCompound.put("RightArm", armPoseValues);
+		NBTTagCompound armLegPoseCompound = new NBTTagCompound();
+		armLegPoseCompound.setTag("LeftArm", armPoseValues);
+		armLegPoseCompound.setTag("RightArm", armPoseValues);
 
-		headBodyCompound.putBoolean("Invisible", true);
-		headBodyCompound.putBoolean("Invulnerable", true);
-		headBodyCompound.putBoolean("NoBasePlate", true);
-		headBodyCompound.putBoolean("ShowArms", true);
-		headBodyCompound.putInt("DisabledSlots", 2039583);
-		headBodyCompound.put("Pose", armLegPoseCompound);
+		headBodyCompound.setBoolean("Invisible", true);
+		headBodyCompound.setBoolean("Invulnerable", true);
+		headBodyCompound.setBoolean("NoBasePlate", true);
+		headBodyCompound.setBoolean("ShowArms", true);
+		headBodyCompound.setInteger("DisabledSlots", 2039583);
+		headBodyCompound.setTag("Pose", armLegPoseCompound);
 
-		legsCompound.putBoolean("Invisible", true);
-		legsCompound.putBoolean("Invulnerable", true);
-		legsCompound.putBoolean("NoBasePlate", true);
-		legsCompound.putBoolean("ShowArms", true);
-		legsCompound.putInt("DisabledSlots", 2039583);
-		legsCompound.putBoolean("Small", true);
-		legsCompound.put("Pose", armLegPoseCompound);
+		legsCompound.setBoolean("Invisible", true);
+		legsCompound.setBoolean("Invulnerable", true);
+		legsCompound.setBoolean("NoBasePlate", true);
+		legsCompound.setBoolean("ShowArms", true);
+		legsCompound.setInteger("DisabledSlots", 2039583);
+		legsCompound.setBoolean("Small", true);
+		legsCompound.setTag("Pose", armLegPoseCompound);
 
 		skins.put("classic", 100);
 		skins.put("smile", 200);
 	}
 
 	private static ItemStack newModelItem(final int skinValue) {
-		ItemStack itemStack = new ItemStack(Items.STONE_BUTTON);
+		ItemStack itemStack = new ItemStack(Blocks.STONE_BUTTON);
 		itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(skinValue));
 		return itemStack;
 	}

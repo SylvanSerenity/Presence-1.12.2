@@ -4,8 +4,8 @@ import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.entity.CreepingEntity;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.server.network.ServerEntityPlayer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -50,7 +50,7 @@ public class Creep {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -61,11 +61,10 @@ public class Creep {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (creep(player, false)) {
 					scheduleEventWithDelay(
 						player,
@@ -92,14 +91,14 @@ public class Creep {
 
 	public static void onWorldTick(final ServerWorld world) {
 		if (creepingEntities.isEmpty()) return;
-		final List<ServerPlayerEntity> players = world.getPlayers();
+		final List<ServerEntityPlayer> players = world.getPlayers();
 		if (players.isEmpty()) return;
 
 		Iterator<CreepingEntity> it = creepingEntities.iterator();
 		CreepingEntity herobrine;
 		while (it.hasNext()) {
 			herobrine = it.next();
-			final PlayerEntity player = herobrine.getTrackedPlayer();
+			final EntityPlayer player = herobrine.getTrackedPlayer();
 			// Remove if player leaves or is in another dimension
 			if (player.isRemoved() || player.getWorld().getDimension() != world.getDimension()) {
 				herobrine.remove();
@@ -119,7 +118,7 @@ public class Creep {
 		}
 	}
 
-	public static boolean creep(final PlayerEntity player, final boolean overrideHauntLevel) {
+	public static boolean creep(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (player.isRemoved()) return false;
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();

@@ -1,15 +1,15 @@
 package com.sylvan.presence.entity;
 
 import com.sylvan.presence.event.Stalk;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 
 public class StalkingEntity extends HerobrineEntity {
-	private final PlayerEntity trackedPlayer;
+	private final EntityPlayer trackedPlayer;
 	private boolean shouldRemove = false;
 	private boolean hasBeenSeen = false;
 
-	public StalkingEntity(World world, String skin, final PlayerEntity trackedPlayer) {
+	public StalkingEntity(World world, String skin, final EntityPlayer trackedPlayer) {
 		super(world, skin);
 		this.trackedPlayer = trackedPlayer;
 		this.setGravity(true);
@@ -31,7 +31,7 @@ public class StalkingEntity extends HerobrineEntity {
 		}
 	}
 
-	public PlayerEntity getTrackedPlayer() {
+	public EntityPlayer getTrackedPlayer() {
 		return trackedPlayer;
 	}
 

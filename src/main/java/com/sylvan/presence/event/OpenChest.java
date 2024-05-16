@@ -1,20 +1,20 @@
 package com.sylvan.presence.event;
 
+import com.google.common.base.Predicate;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +60,7 @@ public class OpenChest {
 		chestBlocks.add(Blocks.TRAPPED_CHEST);
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -71,11 +71,10 @@ public class OpenChest {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (openChest(player, false)) {
 					scheduleEventWithDelay(
 						player,
@@ -93,8 +92,7 @@ public class OpenChest {
 		);
 	}
 
-	public static boolean openChest(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return false;
+	public static boolean openChest(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < openChestHauntLevelMin) return true; // Reset event as if it passed
@@ -105,10 +103,15 @@ public class OpenChest {
 		if (nearestChestPos == null) return false;
 
 		// Players must not see chest open
-		final World world = player.getWorld();
-		final List<? extends PlayerEntity> players = world.getPlayers();
+		final World world = player.getEntityWorld();
+		final List<? extends EntityPlayer> players = world.getPlayers(EntityPlayer.class, new Predicate<EntityPlayer>() {
+			@Override
+			public boolean apply(@Nullable EntityPlayer input) {
+				return true;
+			}
+		});
 		if (openChestNotSeenConstraint && (Algorithms.couldBlockBeSeenByPlayers(players, nearestChestPos))) return false;
-		final BlockState chestBlockState = world.getBlockState(nearestChestPos);
+		final IBlockState chestBlockState = world.getBlockState(nearestChestPos);
 
 		// Swap two random items
 		if (openChestSwapItems) {
@@ -150,9 +153,11 @@ public class OpenChest {
 
 		// Play open chest sound
 		if (openChestPlaySound) {
-			world.playSound(null, nearestChestPos, SoundEvents.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS);
+			world.playSound(null, nearestChestPos, SoundEvents.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 16.0f, 1.0f);
 			Events.scheduler.schedule(
-				() -> world.playSound(null, nearestChestPos, SoundEvents.BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS), Algorithms.RANDOM.nextBetween(openChestCloseSoundMsMin, openChestCloseSoundMsMax), TimeUnit.MILLISECONDS
+				() -> world.playSound(null, nearestChestPos, SoundEvents.BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 16.0f, 1.0f),
+					Algorithms.RANDOM.nextBetween(openChestCloseSoundMsMin, openChestCloseSoundMsMax),
+					TimeUnit.MILLISECONDS
 			);
 		}
 

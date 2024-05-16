@@ -1,14 +1,16 @@
 package com.sylvan.presence.event;
 
+import com.google.common.base.Predicate;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
 import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +50,7 @@ public class TrampleCrops {
 		cropBlocks.add(Blocks.BEETROOTS);
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -59,11 +61,10 @@ public class TrampleCrops {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (trampleCrops(player, false)) {
 					scheduleEventWithDelay(
 						player,
@@ -81,8 +82,7 @@ public class TrampleCrops {
 		);
 	}
 
-	public static boolean trampleCrops(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return false;
+	public static boolean trampleCrops(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < trampleCropsHauntLevelMin) return true; // Reset event as if it passed
@@ -93,12 +93,17 @@ public class TrampleCrops {
 		if (nearestCropPos == null) return false;
 
 		// Players must not see flower get placed
-		final World world = player.getWorld();
-		final List<? extends PlayerEntity> players = world.getPlayers();
+		final World world = player.getEntityWorld();
+		final List<? extends EntityPlayer> players = world.getPlayers(EntityPlayer.class, new Predicate<EntityPlayer>() {
+			@Override
+			public boolean apply(@Nullable EntityPlayer input) {
+				return true;
+			}
+		});
 		if (trampleCropsNotSeenConstraint && Algorithms.couldBlockBeSeenByPlayers(players, nearestCropPos)) return false;
 
 		// Plant poppy
-		world.removeBlock(nearestCropPos, false);
+		world.setBlockToAir(nearestCropPos);
 
 		return true;
 	}

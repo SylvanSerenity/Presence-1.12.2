@@ -3,12 +3,10 @@ package com.sylvan.presence.event;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.s2c.play.PositionFlag;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
@@ -40,11 +38,10 @@ public class Freeze {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				freeze(player, false);
 				scheduleEvent(player);
 			},
@@ -67,8 +64,7 @@ public class Freeze {
 		}
 	}
 
-	public static void freeze(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return;
+	public static void freeze(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < freezeHauntLevelMin) return; // Reset event as if it passed
@@ -78,28 +74,30 @@ public class Freeze {
 		freezeDataList.add(new FreezeData(player));
 
 		// Play freeze sound
-		player.playSoundToPlayer(SoundEvent.of(new Identifier("presence", "event.freeze")), SoundCategory.MASTER, 1.0f, 1.0f);
+		final SoundEvent sound = SoundEvent.REGISTRY.getObject(new ResourceLocation("presence", "event.freeze"));
+		player.getEntityWorld().playSound(player, player.getPosition(), sound, SoundCategory.PLAYERS, 1.0f, 1.0f);
 	}
 
 	private static class FreezeData {
-		private final PlayerEntity frozenPlayer;
+		private final EntityPlayer frozenPlayer;
 		private int freezeTicks = 0;
 		private final float pitch;
 		private final float yaw;
 		private final Vec3d position;
 
-		public FreezeData(final PlayerEntity player) {
+		public FreezeData(final EntityPlayer player) {
 			frozenPlayer = player;
-			pitch = player.getPitch();
-			yaw = player.getYaw();
-			position = player.getPos();
+			pitch = player.getPitchYaw().x;
+			yaw = player.getPitchYaw().y;
+			position = player.getPositionVector();
 		}
 
 		public void freeze() {
 			++freezeTicks;
 
 			// Freeze rotation and position
-			frozenPlayer.teleport((ServerWorld) frozenPlayer.getWorld(), position.getX(), position.getY(), position.getZ(), PositionFlag.VALUES, yaw, pitch);
+			//TODO Check frozenPlayer.attemptTeleport(position.x, position.y, position.z);
+			frozenPlayer.setPositionAndRotation(position.x, position.y, position.z, yaw, pitch);
 		}
 
 		public int getTicks() {

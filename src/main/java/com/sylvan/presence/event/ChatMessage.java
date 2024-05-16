@@ -3,8 +3,8 @@ package com.sylvan.presence.event;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.text.TextComponentString;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,11 +30,10 @@ public class ChatMessage {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				chatMessage(player, false, false);
 				scheduleEvent(player);
 			},
@@ -45,16 +44,15 @@ public class ChatMessage {
 		);
 	}
 
-	public static void chatMessage(final PlayerEntity player, final boolean overrideHauntLevel, final boolean overrideAloneConstraint) {
-		if (player.isRemoved()) return;
+	public static void chatMessage(final EntityPlayer player, final boolean overrideHauntLevel, final boolean overrideAloneConstraint) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < chatMessageHauntLevelMin) return; // Reset event as if it passed
 		}
 
 		// Player must be alone
-		if (chatMessageAloneConstraint && !overrideAloneConstraint && player.getServer().getPlayerManager().getPlayerList().size() != 1) return;
+		if (chatMessageAloneConstraint && !overrideAloneConstraint && player.getServer().getPlayerList().getCurrentPlayerCount() != 1) return;
 
-		player.sendMessage(Text.literal("."));
+		player.sendMessage(new TextComponentString("."));
 	}
 }

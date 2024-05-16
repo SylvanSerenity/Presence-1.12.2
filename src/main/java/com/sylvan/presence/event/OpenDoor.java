@@ -4,10 +4,13 @@ import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.DoorBlock;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -45,19 +48,14 @@ public class OpenDoor {
 
 	public static void initEvent() {
 		doorBlocks.add(Blocks.ACACIA_DOOR);
-		doorBlocks.add(Blocks.BAMBOO_DOOR);
 		doorBlocks.add(Blocks.BIRCH_DOOR);
-		doorBlocks.add(Blocks.CHERRY_DOOR);
-		doorBlocks.add(Blocks.CRIMSON_DOOR);
 		doorBlocks.add(Blocks.DARK_OAK_DOOR);
 		doorBlocks.add(Blocks.JUNGLE_DOOR);
-		doorBlocks.add(Blocks.MANGROVE_DOOR);
 		doorBlocks.add(Blocks.OAK_DOOR);
 		doorBlocks.add(Blocks.SPRUCE_DOOR);
-		doorBlocks.add(Blocks.WARPED_DOOR);
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -68,11 +66,10 @@ public class OpenDoor {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (openDoor(player, false)) {
 					scheduleEventWithDelay(
 						player,
@@ -90,8 +87,7 @@ public class OpenDoor {
 		);
 	}
 
-	public static boolean openDoor(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return false;
+	public static boolean openDoor(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < openDoorHauntLevelMin) return true; // Reset event as if it passed
@@ -102,8 +98,8 @@ public class OpenDoor {
 		if (nearestDoorPos == null) return false;
 
 		// Players must not see door open
-		final World world = player.getWorld();
-		final List<? extends PlayerEntity> players = world.getPlayers();
+		final World world = player.getEntityWorld();
+		final List<? extends EntityPlayer> players = world.getPlayers();
 		if (
 			openDoorNotSeenConstraint && (
 				Algorithms.couldBlockBeSeenByPlayers(players, nearestDoorPos) ||
@@ -112,8 +108,8 @@ public class OpenDoor {
 		) return false;
 
 		// Open door
-		final BlockState currentBlockState = world.getBlockState(nearestDoorPos);
-		final DoorBlock doorBlock = (DoorBlock) currentBlockState.getBlock();
+		final IBlockState currentBlockState = world.getBlockState(nearestDoorPos);
+		final BlockDoor doorBlock = (BlockDoor) currentBlockState.getBlock();
 		doorBlock.setOpen(null, world, currentBlockState, nearestDoorPos, true);
 		return true;
 	}

@@ -3,10 +3,10 @@ package com.sylvan.presence.event;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,11 +30,10 @@ public class SubtitleWarning {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				subtitleWarning(player, false);
 				scheduleEvent(player);
 			},
@@ -45,13 +44,13 @@ public class SubtitleWarning {
 		);
 	}
 
-	public static void subtitleWarning(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return;
+	public static void subtitleWarning(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < subtitleWarningHauntLevelMin) return; // Reset event as if it passed
 		}
 
-		player.playSoundToPlayer(SoundEvent.of(new Identifier("presence", "message.warning")), SoundCategory.PLAYERS, 1, 1);
+		final SoundEvent sound = SoundEvent.REGISTRY.getObject(new ResourceLocation("presence", "message.warning"));
+		player.getEntityWorld().playSound(player, player.getPosition(), sound, SoundCategory.PLAYERS, 1.0f, 1.0f);
 	}
 }

@@ -9,6 +9,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
@@ -232,14 +233,14 @@ public class Algorithms {
 		).normalize();
 	}
 
-	public static Direction getBlockDirectionFromEntity(final Entity entity, final BlockPos blockPos) {
+	public static EnumFacing getBlockDirectionFromEntity(final Entity entity, final BlockPos blockPos) {
 		final Vec3d entityPos = entity.getPositionVector();
 		final Vec3d direction = new Vec3d(
 			blockPos.getX() - entityPos.x,
 			blockPos.getY() - entityPos.y,
 			blockPos.getZ() - entityPos.z
 		).normalize();
-		return Direction.fromVector(
+		return EnumFacing.fromAngle( // TODO From Euler angle
 			(int) direction.x,
 			(int) direction.y,
 			(int) direction.z

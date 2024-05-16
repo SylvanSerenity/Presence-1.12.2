@@ -3,11 +3,12 @@ package com.sylvan.presence.event;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 import java.util.concurrent.TimeUnit;
@@ -44,11 +45,10 @@ public class Footsteps {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				generateFootsteps(player, Math.max(1, Algorithms.RANDOM.nextBetween(footstepsStepsMin, footstepsStepsMax)), false);
 				scheduleEvent(player);
 			},
@@ -59,8 +59,8 @@ public class Footsteps {
 		);
 	}
 
-	public static void generateFootsteps(final PlayerEntity player, final int footstepCount, final boolean overrideHauntLevel) {
-		if (player.isRemoved() || footstepCount < 1) return;
+	public static void generateFootsteps(final EntityPlayer player, final int footstepCount, final boolean overrideHauntLevel) {
+		if (footstepCount < 1) return;
 
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
@@ -75,8 +75,8 @@ public class Footsteps {
 			) : (footstepsReflexMs + Algorithms.RANDOM.nextBetween(0, footstepsMaxReflexVariance)) / footstepCount
 		);
 
-		final BlockPos blockPos = player.getBlockPos().down();
-		final Direction behindPlayer = player.getHorizontalFacing().getOpposite();
+		final BlockPos blockPos = player.getPosition().down();
+		final EnumFacing behindPlayer = player.getHorizontalFacing().getOpposite();
 		int delay;
 		// Play footstep on each block approaching the player
 		for (int distance = footstepCount; distance > 0; --distance) {
@@ -86,11 +86,9 @@ public class Footsteps {
 		}
 	}
 
-	public static void playFootstep(final PlayerEntity player, BlockPos soundPos) {
-		if (player.isRemoved()) return;
-
-		final World world = player.getWorld();
-		final BlockPos playerPos = player.getBlockPos();
+	public static void playFootstep(final EntityPlayer player, BlockPos soundPos) {
+		final World world = player.getEntityWorld();
+		final BlockPos playerPos = player.getPosition();
 
 		// Player must be able to stand on source block
 		soundPos = Algorithms.getNearestStandableBlockPosTowardsEntity(
@@ -102,7 +100,8 @@ public class Footsteps {
 		if (!Algorithms.couldPlayerStandOnBlock(world, soundPos)) return;
 
 		// Play the sound of the block the footsteps on
-		final SoundEvent stepSound = world.getBlockState(soundPos).getSoundGroup().getStepSound();
-		world.playSound(null, soundPos, stepSound, SoundCategory.BLOCKS);
+		final IBlockState state = world.getBlockState(soundPos);
+		final SoundEvent stepSound = state.getBlock().getSoundType(state, world, soundPos, null).getStepSound();
+		world.playSound(null, soundPos, stepSound, SoundCategory.BLOCKS, 5.0f, 1.0f);
 	}
 }

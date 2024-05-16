@@ -1,5 +1,6 @@
 package com.sylvan.presence.event;
 
+import com.google.common.base.Predicate;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
@@ -8,11 +9,13 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.DoorBlock;
 import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,14 +49,12 @@ public class FlowerGift {
 	}
 
 	public static void initEvent() {
-		plantableBlocks.add(Blocks.GRASS_BLOCK);
+		plantableBlocks.add(Blocks.GRASS);
 		plantableBlocks.add(Blocks.DIRT);
-		plantableBlocks.add(Blocks.PODZOL);
-		plantableBlocks.add(Blocks.ROOTED_DIRT);
 		plantableBlocks.add(Blocks.MYCELIUM);
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -64,11 +65,10 @@ public class FlowerGift {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (flowerGift(player, false)) {
 					scheduleEventWithDelay(
 						player,
@@ -86,8 +86,7 @@ public class FlowerGift {
 		);
 	}
 
-	public static boolean flowerGift(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return false;
+	public static boolean flowerGift(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < flowerGiftHauntLevelMin) return true; // Reset event as if it passed
@@ -98,7 +97,7 @@ public class FlowerGift {
 		if (nearestDoorPos == null) return false;
 
 		// Make sure to select the bottom half of the door
-		final World world = player.getWorld();
+		final World world = player.getEntityWorld();
 		final BlockState currentBlockState = world.getBlockState(nearestDoorPos);
 		if (currentBlockState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER) nearestDoorPos = nearestDoorPos.down(2);
 		else nearestDoorPos = nearestDoorPos.down();
@@ -132,11 +131,16 @@ public class FlowerGift {
 		plantablePos = plantablePos.up();
 
 		// Players must not see flower get placed
-		final List<? extends PlayerEntity> players = world.getPlayers();
+		final List<? extends EntityPlayer> players = world.getPlayers(EntityPlayer.class, new Predicate<EntityPlayer>() {
+			@Override
+			public boolean apply(@Nullable EntityPlayer input) {
+				return true;
+			}
+		});
 		if (flowerGiftNotSeenConstraint && Algorithms.couldBlockBeSeenByPlayers(players, plantablePos)) return false;
 
 		// Plant poppy
-		world.setBlockState(plantablePos, Blocks.POPPY.getDefaultState());
+		world.setBlockState(plantablePos, Blocks.RED_FLOWER.getDefaultState());
 
 		return true;
 	}

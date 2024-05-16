@@ -3,9 +3,11 @@ package com.sylvan.presence.event;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
+import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.DoorBlock;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -51,11 +53,10 @@ public class FlickerDoor {
 		}
 	}
 
-	public static void scheduleTracking(final PlayerEntity player) {
+	public static void scheduleTracking(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				trackPlayer(player, false);
 			},
 			Algorithms.RANDOM.nextBetween(
@@ -65,41 +66,38 @@ public class FlickerDoor {
 		);
 	}
 
-	public static void trackPlayer(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return;
+	public static void trackPlayer(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < flickerDoorHauntLevelMin) return; // Reset event as if it passed
 		}
 
-		if (!trackedPlayers.contains(player.getUuid())) trackedPlayers.add(player.getUuid());
+		if (!trackedPlayers.contains(player.getUniqueID())) trackedPlayers.add(player.getUniqueID());
 	}
 
-	public static void onUseBlock(final PlayerEntity player, final World world, final BlockHitResult hitResult) {
+	public static void onUseBlock(final EntityPlayer player, final World world, final BlockHitResult hitResult) {
 		if (!flickerDoorEnabled) return;
 
 		final BlockPos doorPos = hitResult.getBlockPos();
 		if (
 			!Algorithms.isBlockOfBlockTypes(world.getBlockState(doorPos).getBlock(), OpenDoor.doorBlocks) ||	// Must be a door
-			(flickerDoorClosedConstraint && !world.getBlockState(doorPos).get(DoorBlock.OPEN))			// Must be closing door
+			(flickerDoorClosedConstraint && !world.getBlockState(doorPos).getValue(BlockDoor.OPEN))			// Must be closing door
 		) return;
 
-		if (trackedPlayers.contains(player.getUuid())) {
+		if (trackedPlayers.contains(player.getUniqueID())) {
 			int delay = Algorithms.RANDOM.nextBetween(flickerDoorFlickerDelayMin, flickerDoorFlickerDelayMax);
 			for (int flickerCount = Algorithms.RANDOM.nextBetween(flickerDoorFlickerMin, flickerDoorFlickerMax); flickerCount > 0; --flickerCount) {
 				Events.scheduler.schedule(() -> flickerDoor(player, doorPos), delay, TimeUnit.MILLISECONDS);
 				delay += Algorithms.RANDOM.nextBetween(flickerDoorFlickerIntervalMin, flickerDoorFlickerIntervalMax);
 			}
-			trackedPlayers.remove(player.getUuid());
+			trackedPlayers.remove(player.getUniqueID());
 		}
 	}
 
-	public static void flickerDoor(final PlayerEntity player, final BlockPos doorPos) {
-		if (player.isRemoved()) return;
-
-		final World world = player.getWorld();
-		final BlockState currentBlockState = world.getBlockState(doorPos);
-		final DoorBlock doorBlock = (DoorBlock) currentBlockState.getBlock();
+	public static void flickerDoor(final EntityPlayer player, final BlockPos doorPos) {
+		final World world = player.getEntityWorld();
+		final IBlockState currentBlockState = world.getBlockState(doorPos);
+		final BlockDoor doorBlock = (BlockDoor) currentBlockState.getBlock();
 
 		// Set to opposite of current open state
 		doorBlock.setOpen(null, world, currentBlockState, doorPos, !doorBlock.isOpen(currentBlockState));

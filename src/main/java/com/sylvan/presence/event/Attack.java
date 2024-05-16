@@ -59,7 +59,6 @@ public class Attack {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (attack(player, Algorithms.randomBetween(attackDamageMin, attackDamageMax), false)) {
 					scheduleEventWithDelay(
 						player,
@@ -89,8 +88,8 @@ public class Attack {
 		player.attackEntityFrom(DamageSource.GENERIC, damage);
 
 		// Push player in a random direction
-		final Vec3d randomPush = Algorithms.getRandomDirection(false).multiply(Algorithms.randomBetween(attackPushMin, attackPushMax));
-		player.addVelocity(randomPush.getX(), attackPushVertical, randomPush.getZ());
+		final Vec3d randomPush = Algorithms.multiplyVec3d(Algorithms.getRandomDirection(false), Algorithms.randomBetween(attackPushMin, attackPushMax));
+		player.addVelocity(randomPush.x, attackPushVertical, randomPush.z);
 
 		return true;
 	}

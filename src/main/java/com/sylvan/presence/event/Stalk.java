@@ -1,16 +1,17 @@
 package com.sylvan.presence.event;
 
+import com.google.common.base.Predicate;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.entity.StalkingEntity;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +49,7 @@ public class Stalk {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -59,11 +60,10 @@ public class Stalk {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (stalk(player, false)) {
 					scheduleEventWithDelay(
 						player,
@@ -88,21 +88,25 @@ public class Stalk {
 		stalkingEntities.clear();
 	}
 
-	public static void onWorldTick(final ServerWorld world) {
+	public static void onWorldTick(final WorldServer world) {
 		if (stalkingEntities.isEmpty()) return;
-		final List<ServerPlayerEntity> players = world.getPlayers();
+		final List<EntityPlayer> players = world.getPlayers(EntityPlayer.class, new Predicate<EntityPlayer>() {
+			@Override
+			public boolean apply(@Nullable EntityPlayer input) {
+				return true;
+			}
+		});
 		if (players.isEmpty()) return;
 
 		Iterator<StalkingEntity> it = stalkingEntities.iterator();
 		StalkingEntity herobrine;
 		while (it.hasNext()) {
 			herobrine = it.next();
-			final PlayerEntity player = herobrine.getTrackedPlayer();
+			final EntityPlayer player = herobrine.getTrackedPlayer();
 			// Remove if player leaves or is in another dimension
 			if (
-				player.isRemoved() ||							// Remove if player leaves
 				herobrine.shouldRemove() ||						// Remove if stalk event is finished
-				player.getWorld().getDimension() != world.getDimension() ||		// Remove if player is in another dimension
+				player.getEntityWorld() != world ||		// Remove if player is in another dimension
 				herobrine.isWithinDistanceOfPlayers(stalkClosePlayerDistanceMin)	// Remove if players are within a distance
 			) {
 				herobrine.remove();
@@ -114,16 +118,15 @@ public class Stalk {
 		}
 	}
 
-	public static boolean stalk(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return false;
+	public static boolean stalk(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < stalkHauntLevelMin) return true; // Reset event as if it passed
 		}
 
-        final World world = player.getWorld();
+        final World world = player.getEntityWorld();
 		Vec3d spawnPos = Algorithms.getRandomPosNearEntity(player, stalkDistanceMin, stalkDistanceMax, false);
-		final BlockPos playerBlockPos = player.getBlockPos();
+		final BlockPos playerBlockPos = player.getPosition();
 		final BlockPos spawnBlockPos = Algorithms.getNearestStandableBlockPos(
 			world,
 			Algorithms.getBlockPosFromVec3d(spawnPos),
@@ -131,9 +134,9 @@ public class Stalk {
 			playerBlockPos.getY() + stalkDistanceMin
 		);
 		spawnPos = new Vec3d(
-			spawnPos.getX(),
+			spawnPos.x,
 			spawnBlockPos.up().getY(),
-			spawnPos.getZ()
+			spawnPos.z
 		);
 
 		if (!Algorithms.couldPlayerStandOnBlock(world, Algorithms.getBlockPosFromVec3d(spawnPos).down())) return false;
