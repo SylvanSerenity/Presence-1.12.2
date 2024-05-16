@@ -3,7 +3,8 @@ package com.sylvan.presence.event;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.concurrent.TimeUnit;
@@ -43,7 +44,7 @@ public class Attack {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -54,7 +55,7 @@ public class Attack {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
@@ -76,8 +77,7 @@ public class Attack {
 		);
 	}
 
-	public static boolean attack(final PlayerEntity player, final float damage, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return false;
+	public static boolean attack(final EntityPlayer player, final float damage, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < attackHauntLevelMin) return true; // Reset event as if it passed
@@ -86,7 +86,7 @@ public class Attack {
 		if (attackHealthMinConstraint && player.getHealth() < attackHealthMin) return false;
 
 		// Damage player
-		player.damage(player.getWorld().getDamageSources().playerAttack(null), damage);
+		player.attackEntityFrom(DamageSource.GENERIC, damage);
 
 		// Push player in a random direction
 		final Vec3d randomPush = Algorithms.getRandomDirection(false).multiply(Algorithms.randomBetween(attackPushMin, attackPushMax));

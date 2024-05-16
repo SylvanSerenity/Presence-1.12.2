@@ -29,7 +29,7 @@ public class JsonFile {
 
 	public <T> JsonElement getOrSetValue(final String key, final T defaultValue) {
 		try (final FileReader fileReader = new FileReader(file)) {
-			final JsonElement root = JsonParser.parseReader(fileReader);
+			final JsonElement root = new JsonParser().parse(fileReader);
 			if (root.isJsonObject()) {
 				final JsonObject object = root.getAsJsonObject();
 				// Get the value if it exists
@@ -54,7 +54,7 @@ public class JsonFile {
 
 	public JsonObject getJsonObject() {
 		try (final FileReader fileReader = new FileReader(file)) {
-			final JsonElement root = JsonParser.parseReader(fileReader);
+			final JsonElement root = new JsonParser().parse(fileReader);
 			if (root.isJsonObject()) {
 				return  root.getAsJsonObject();
 			}

@@ -1,0 +1,6 @@
+{
+	"parent": "presence:item/herobrine/template/head",
+	"textures": {
+		"skin": "presence:item/herobrine/classic/classic"
+	}
+}

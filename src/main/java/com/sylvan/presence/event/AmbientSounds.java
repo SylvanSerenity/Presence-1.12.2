@@ -5,12 +5,12 @@ import com.google.gson.JsonObject;
 import com.sylvan.presence.Presence;
 import com.sylvan.presence.data.PlayerData;
 import com.sylvan.presence.util.Algorithms;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.registry.Registries;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Identifier;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,18 +33,19 @@ public class AmbientSounds {
 	private static JsonObject ambientSoundsSoundWeights = new JsonObject();	// A set of sound ID keys with weight values to play during the event
 
 	public static void loadConfig() {
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_CAVE.value().getId().toString(), 35.0f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_CRIMSON_FOREST_ADDITIONS.value().getId().toString(), 15.0f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_NETHER_WASTES_ADDITIONS.value().getId().toString(), 15.0f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_BASALT_DELTAS_ADDITIONS.value().getId().toString(), 10.0f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS.value().getId().toString(), 10.0f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_UNDERWATER_LOOP_ADDITIONS_RARE.getId().toString(), 7.0f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_WARPED_FOREST_ADDITIONS.value().getId().toString(), 4.0f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_UNDERWATER_LOOP_ADDITIONS_ULTRA_RARE.getId().toString(), 2.5f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.ENTITY_ENDERMAN_STARE.getId().toString(), 0.8f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.ENTITY_WARDEN_AMBIENT.getId().toString(), 0.4f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.BLOCK_SCULK_SHRIEKER_SHRIEK.getId().toString(), 0.2f);
-		ambientSoundsSoundWeights.addProperty(SoundEvents.ENTITY_WARDEN_ROAR.getId().toString(), 0.1f);
+		// TODO Add sounds to texture pack/mod
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_CAVE.getRegistryName().getResourcePath(), 35.0f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_CRIMSON_FOREST_ADDITIONS.getRegistryName().getResourcePath(), 15.0f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_NETHER_WASTES_ADDITIONS.getRegistryName().getResourcePath(), 15.0f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_BASALT_DELTAS_ADDITIONS.getRegistryName().getResourcePath(), 10.0f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_SOUL_SAND_VALLEY_ADDITIONS.getRegistryName().getResourcePath(), 10.0f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_UNDERWATER_LOOP_ADDITIONS_RARE.getRegistryName().getResourcePath(), 7.0f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_WARPED_FOREST_ADDITIONS.getRegistryName().getResourcePath(), 4.0f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.AMBIENT_UNDERWATER_LOOP_ADDITIONS_ULTRA_RARE.getRegistryName().getResourcePath(), 2.5f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.ENTITY_ENDERMEN_STARE.getRegistryName().getResourcePath(), 0.8f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.ENTITY_WARDEN_AMBIENT.getRegistryName().getResourcePath(), 0.4f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.BLOCK_SCULK_SHRIEKER_SHRIEK.getRegistryName().getResourcePath(), 0.2f);
+		ambientSoundsSoundWeights.addProperty(SoundEvents.ENTITY_WARDEN_ROAR.getRegistryName().getResourcePath(), 0.1f);
 
 		try {
 			ambientSoundsEnabled = Presence.config.getOrSetValue("ambientSoundsEnabled", ambientSoundsEnabled).getAsBoolean();
@@ -70,8 +71,8 @@ public class AmbientSounds {
 			String key;
 			for (Map.Entry<String, JsonElement> entry : ambientSoundsSoundWeights.entrySet()) {
 				key = entry.getKey();
-				final Identifier soundId = Algorithms.getIdentifierFromString(key);
-				final SoundEvent sound = Registries.SOUND_EVENT.get(soundId);
+				final ResourceLocation soundId = Algorithms.getIdentifierFromString(key);
+				final SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(soundId);
 				if (sound == null) {
 					Presence.LOGGER.warn("Could not find sound \"" + key + "\" in AmbientSounds.java.");
 					continue;
@@ -86,7 +87,7 @@ public class AmbientSounds {
 		}
 	}
 
-	public static void scheduleEvent(final PlayerEntity player) {
+	public static void scheduleEvent(final EntityPlayer player) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		scheduleEventWithDelay(
 			player,
@@ -97,11 +98,10 @@ public class AmbientSounds {
 		);
 	}
 
-	public static void scheduleEventWithDelay(final PlayerEntity player, final int delay) {
+	public static void scheduleEventWithDelay(final EntityPlayer player, final int delay) {
 		final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 		Events.scheduler.schedule(
 			() -> {
-				if (player.isRemoved()) return;
 				if (playAmbientSound(player, false)) {
 					scheduleEventWithDelay(
 						player,
@@ -119,8 +119,7 @@ public class AmbientSounds {
 		);
 	}
 
-	public static boolean playAmbientSound(final PlayerEntity player, final boolean overrideHauntLevel) {
-		if (player.isRemoved()) return false;
+	public static boolean playAmbientSound(final EntityPlayer player, final boolean overrideHauntLevel) {
 		if (!overrideHauntLevel) {
 			final float hauntLevel = PlayerData.getPlayerData(player).getHauntLevel();
 			if (hauntLevel < ambientSoundsHauntLevelMin) return true; // Reset event as if it passed
@@ -133,7 +132,7 @@ public class AmbientSounds {
 
 		final float pitch = Algorithms.randomBetween(ambientSoundsPitchMin, ambientSoundsPitchMax);
 		final SoundEvent sound = Algorithms.randomKeyFromWeightMap(ambientSounds);
-		player.playSoundToPlayer(sound, SoundCategory.AMBIENT, 256.0f, pitch);
+		player.getEntityWorld().playSound(player, player.getPosition(), sound, SoundCategory.AMBIENT, 256.0f, pitch);
 		return true;
 	}
 }

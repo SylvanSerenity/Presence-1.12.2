@@ -1,0 +1,93 @@
+{
+	"parent": "minecraft:block/button_inventory",
+	"textures": {
+		"texture": "minecraft:block/stone"
+	},
+	"overrides": [
+		{
+			"predicate": {
+				"custom_model_data": 100
+			},
+			"model": "presence:item/herobrine/classic/head"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 101
+			},
+			"model": "presence:item/herobrine/classic/body"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 102
+			},
+			"model": "presence:item/herobrine/classic/left_arm"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 103
+			},
+			"model": "presence:item/herobrine/classic/right_arm"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 104
+			},
+			"model": "presence:item/herobrine/classic/left_leg"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 105
+			},
+			"model": "presence:item/herobrine/classic/right_leg"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 106
+			},
+			"model": "presence:item/herobrine/classic/eyes"
+		},
+
+		{
+			"predicate": {
+				"custom_model_data": 200
+			},
+			"model": "presence:item/herobrine/smile/head"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 201
+			},
+			"model": "presence:item/herobrine/smile/body"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 202
+			},
+			"model": "presence:item/herobrine/smile/left_arm"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 203
+			},
+			"model": "presence:item/herobrine/smile/right_arm"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 204
+			},
+			"model": "presence:item/herobrine/smile/left_leg"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 205
+			},
+			"model": "presence:item/herobrine/smile/right_leg"
+		},
+		{
+			"predicate": {
+				"custom_model_data": 206
+			},
+			"model": "presence:item/herobrine/smile/eyes"
+		}
+	]
+}

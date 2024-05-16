@@ -8,7 +8,7 @@ import com.sylvan.presence.entity.HerobrineEntity;
 import com.sylvan.presence.event.*;
 import com.sylvan.presence.util.Algorithms;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
@@ -49,7 +49,7 @@ public class Commands {
 						})
 						.executes(context -> {
 							final String playerName = StringArgumentType.getString(context, "player");
-							final PlayerEntity player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
+							final EntityPlayer player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
 							if (player == null) {
 								context.getSource().sendFeedback(() -> Text.literal("Player not found.").withColor(Formatting.DARK_RED.getColorValue()), false);
 							} else {
@@ -100,7 +100,7 @@ public class Commands {
 							})
 							.executes(context -> {
 								final String playerName = StringArgumentType.getString(context, "player");
-								final PlayerEntity player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
+								final EntityPlayer player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
 								if (player == null) {
 									context.getSource().sendFeedback(() -> Text.literal("Player not found.").withColor(Formatting.DARK_RED.getColorValue()), false);
 								} else {
@@ -138,7 +138,7 @@ public class Commands {
 						})
 						.executes(context -> {
 							final String playerName = StringArgumentType.getString(context, "player");
-							final PlayerEntity player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
+							final EntityPlayer player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
 							if (player == null) {
 								context.getSource().sendFeedback(() -> Text.literal("Player not found.").withColor(Formatting.DARK_RED.getColorValue()), false);
 							} else {
@@ -174,7 +174,7 @@ public class Commands {
 						})
 						.executes(context -> {
 							final String playerName = StringArgumentType.getString(context, "player");
-							final PlayerEntity player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
+							final EntityPlayer player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
 							if (player == null) {
 								context.getSource().sendFeedback(() -> Text.literal("Player not found.").withColor(Formatting.DARK_RED.getColorValue()), false);
 							} else {
@@ -192,7 +192,7 @@ public class Commands {
 					literal("extinguishTorches")
 					.executes(context -> {
 						if (context.getSource().isExecutedByPlayer()) {
-							final PlayerEntity player = context.getSource().getPlayer();
+							final EntityPlayer player = context.getSource().getPlayer();
 							if (ExtinguishTorches.torchPlacementMap.containsKey(player.getUuid())) {
 								context.getSource().sendFeedback(() -> Text.literal(
 									"Extinguished tracked torches for " + player.getName().getString() + "."

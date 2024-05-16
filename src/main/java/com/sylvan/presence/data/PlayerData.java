@@ -5,7 +5,7 @@ import com.sylvan.presence.Presence;
 import com.sylvan.presence.event.*;
 import com.sylvan.presence.util.Algorithms;
 import com.sylvan.presence.util.JsonFile;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.WorldSavePath;
 
@@ -29,13 +29,13 @@ public class PlayerData {
 	private static int minutesToIncreaseHauntLevelBy1 = 60 * 2;	// The playtime of minutes that would increase haunt level by 1.0f
 	private static int hauntLevelCalculationDelay = 60;		// The time between haunt level calculations based on playtime
 
-	public static PlayerData addPlayerData(final PlayerEntity player) {
+	public static PlayerData addPlayerData(final EntityPlayer player) {
 		final PlayerData playerData = new PlayerData(player);
 		playerDataMap.put(player.getUuid(), playerData);
 		return playerData;
 	}
 
-	public static PlayerData getPlayerData(final PlayerEntity player) {
+	public static PlayerData getPlayerData(final EntityPlayer player) {
 		if (playerDataMap.containsKey(player.getUuid())) return playerDataMap.get(player.getUuid());
 		else return new PlayerData(player);
 	}
@@ -66,7 +66,7 @@ public class PlayerData {
 
 	// Instance
 	private final UUID uuid;
-	private PlayerEntity player;
+	private EntityPlayer player;
 	private final String playerDataPath;
 	private final LocalDateTime joinTime;
 	private boolean isHaunted = false;
@@ -76,7 +76,7 @@ public class PlayerData {
 	private float hauntChance = defaultHauntChance;	// Chance of being haunted when joining the server
 	private long playTime = 0;			// Time in minutes that the player has played
 
-	private PlayerData(final PlayerEntity playerEntity) {
+	private PlayerData(final EntityPlayer playerEntity) {
 		this.player = playerEntity;
 		this.uuid = playerEntity.getUuid();
 		this.playerDataPath = playerDataDirectory + uuid.toString();
@@ -93,7 +93,7 @@ public class PlayerData {
 		return hauntLevel;
 	}
 
-	public PlayerEntity getPlayer() {
+	public EntityPlayer getPlayer() {
 		if (player == null) player = server.getPlayerManager().getPlayer(uuid);
 		return player;
 	}

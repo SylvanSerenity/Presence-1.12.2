@@ -1,0 +1,6 @@
+{
+	"parent": "presence:item/herobrine/template/left_arm",
+	"textures": {
+		"skin": "presence:item/herobrine/classic/classic"
+	}
+}

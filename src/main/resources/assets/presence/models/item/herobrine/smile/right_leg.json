@@ -1,0 +1,6 @@
+{
+	"parent": "presence:item/herobrine/template/right_leg",
+	"textures": {
+		"skin": "presence:item/herobrine/smile/smile"
+	}
+}
