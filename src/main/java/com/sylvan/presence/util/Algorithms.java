@@ -13,6 +13,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Rotations;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
@@ -240,11 +241,7 @@ public class Algorithms {
 			blockPos.getY() - entityPos.y,
 			blockPos.getZ() - entityPos.z
 		).normalize();
-		return EnumFacing.fromAngle( // TODO From Euler angle
-			(int) direction.x,
-			(int) direction.y,
-			(int) direction.z
-		);
+		return EnumFacing.fromAngle(directionToAngles(direction).getY());
 	}
 
 	public static Vec3d getRandomPosNearEntity(final Entity entity, final int distanceMin, final int distanceMax, final boolean randomY) {
@@ -351,13 +348,13 @@ public class Algorithms {
 		return pos.add(offsetVector);
 	}
 
-	public static EulerAngle directionToAngles(final Vec3d direction) {
+	public static Rotations directionToAngles(final Vec3d direction) {
 		final float pitch = (float) -Math.toDegrees(Math.atan2(
 			direction.y,
 			Math.sqrt((direction.x * direction.x) + (direction.z * direction.z))
 		));
 		final float yaw = (float) Math.toDegrees(Math.atan2(direction.z, direction.x)) - 90.0f;
-		return new EulerAngle(pitch, yaw, 0.0f);
+		return new Rotations(pitch, yaw, 0.0f);
 	}
 
 	public static boolean isEntityInDarkness(final EntityLivingBase entity, final int maxLightLevel) {

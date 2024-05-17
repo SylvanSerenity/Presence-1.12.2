@@ -7,13 +7,17 @@ import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.Entity.RemovalReason;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.EntityEquipmentSlot;
 import net.minecraft.entity.MovementType;
+import net.minecraft.entity.MoverType;
 import net.minecraft.entity.decoration.EntityArmorStand;
 import net.minecraft.entity.item.EntityArmorStand;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.EntityEntityEquipmentSlot;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NBTTagCompound;
@@ -22,9 +26,11 @@ import net.minecraft.nbt.NBTTagFloat;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NbtFloat;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.network.ServerEntityPlayer;
+import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.EulerAngle;
+import net.minecraft.util.math.Rotations;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -75,7 +81,9 @@ public class HerobrineEntity {
 
 	private static ItemStack newModelItem(final int skinValue) {
 		ItemStack itemStack = new ItemStack(Blocks.STONE_BUTTON);
-		itemStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(skinValue));
+		NBTTagCompound nbt = itemStack.getTagCompound();
+		nbt.setInteger("CustomModelData", skinValue);
+		itemStack.setTagCompound(nbt);
 		return itemStack;
 	}
 
@@ -94,30 +102,26 @@ public class HerobrineEntity {
 		ItemStack leftLeg = newModelItem(skinId + 4);
 		ItemStack rightLeg = newModelItem(skinId + 5);
 
-		this.headEntity = EntityType.ARMOR_STAND.create(world);
-        assert headEntity != null;
-        headEntity.readCustomDataFromNbt(headBodyCompound);
-		headEntity.equipStack(EquipmentSlot.HEAD, head);
+		this.headEntity = new EntityArmorStand(world);
+        headEntity.readEntityFromNBT(headBodyCompound);
+		headEntity.setItemStackToSlot(EntityEquipmentSlot.HEAD, head);
 		headEntity.setNoGravity(true);
 
-		this.bodyEntity = EntityType.ARMOR_STAND.create(world);
-        assert bodyEntity != null;
-        bodyEntity.readCustomDataFromNbt(headBodyCompound);
-		bodyEntity.equipStack(EquipmentSlot.HEAD, body);
+		this.bodyEntity = new EntityArmorStand(world);
+        bodyEntity.readEntityFromNBT(headBodyCompound);
+		bodyEntity.setItemStackToSlot(EntityEquipmentSlot.HEAD, body);
 		bodyEntity.setNoGravity(true);
 
-		this.armsEntity = EntityType.ARMOR_STAND.create(world);
-        assert armsEntity != null;
-        armsEntity.readCustomDataFromNbt(headBodyCompound);
-		armsEntity.equipStack(EquipmentSlot.MAINHAND, rightArm);
-		armsEntity.equipStack(EquipmentSlot.OFFHAND, leftArm);
+		this.armsEntity = new EntityArmorStand(world);
+        armsEntity.readEntityFromNBT(headBodyCompound);
+		armsEntity.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, rightArm);
+		armsEntity.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, leftArm);
 		armsEntity.setNoGravity(true);
 
-		this.legsEntity = EntityType.ARMOR_STAND.create(world);
-        assert legsEntity != null;
-        legsEntity.readCustomDataFromNbt(legsCompound);
-		legsEntity.equipStack(EquipmentSlot.MAINHAND, rightLeg);
-		legsEntity.equipStack(EquipmentSlot.OFFHAND, leftLeg);
+		this.legsEntity = new EntityArmorStand(world);
+        legsEntity.readEntityFromNBT(legsCompound);
+		legsEntity.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, rightLeg);
+		legsEntity.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, leftLeg);
 		legsEntity.setNoGravity(true);
 	}
 
@@ -130,17 +134,15 @@ public class HerobrineEntity {
 
 	public void scheduleRemoval(final long ms) {
 		Events.scheduler.schedule(
-			() -> {
-				if (!headEntity.isRemoved()) remove();
-			}, ms, TimeUnit.MILLISECONDS
+				this::remove, ms, TimeUnit.MILLISECONDS
 		);
 	}
 
 	public void remove() {
-		headEntity.remove(RemovalReason.DISCARDED);
-		bodyEntity.remove(RemovalReason.DISCARDED);
-		armsEntity.remove(RemovalReason.DISCARDED);
-		legsEntity.remove(RemovalReason.DISCARDED);
+		headEntity.setDead();
+		bodyEntity.setDead();
+		armsEntity.setDead();
+		legsEntity.setDead();
 	}
 
 	public void setGravity(final boolean gravity) {
@@ -151,14 +153,15 @@ public class HerobrineEntity {
 	}
 
 	public void setHeadRotation(final float pitch, final float yaw, final float roll) {
-		EulerAngle headRotation = new EulerAngle(pitch, yaw, roll);
+		final Rotations headRotation = new Rotations(pitch, yaw, roll);
 		headEntity.setHeadRotation(headRotation);
 	}
 
 	public void setBodyRotation(final float yaw) {
-		bodyEntity.setYaw(yaw);
-		armsEntity.setYaw(yaw);
-		legsEntity.setYaw(yaw);
+		final Rotations rotation = new Rotations(0.0f, yaw, 0.0f);
+		bodyEntity.setBodyRotation(rotation);
+		armsEntity.setBodyRotation(rotation);
+		legsEntity.setBodyRotation(rotation);
 	}
 
 	public void setPosition(final Vec3d pos) {
@@ -169,38 +172,38 @@ public class HerobrineEntity {
 	}
 
 	public void lookAt(final Entity entity) {
-		final Vec3d direction = Algorithms.getDirectionPosToPos(headEntity.getEyePos(), entity.getEyePos());
+		final Vec3d direction = Algorithms.getDirectionPosToPos(headEntity.getPositionEyes(1), entity.getPositionEyes(1));
 		final EulerAngle rotation = Algorithms.directionToAngles(direction);
 		setHeadRotation(rotation.getPitch(), rotation.getYaw(), 0.0f);
 		setBodyRotation(rotation.getYaw());
 	}
 
 	public boolean isSeenByPlayers(final double dotProductThreshold) {
-		final List<ServerPlayerEntity> players = headEntity.getServer().getPlayerManager().getPlayerList();
-		final double maxY = headEntity.getY() + headEntity.getHeight();
-		Vec3d pos = headEntity.getPos();
-		while (pos.getY() < maxY) {
-			for (final PlayerEntity player : players) {
+		final List<EntityPlayerMP> players = headEntity.getServer().getPlayerList().getPlayers();
+		final double maxY = headEntity.getPosition().getY() + headEntity.getEyeHeight();
+		Vec3d pos = headEntity.getPositionVector();
+		while (pos.y < maxY) {
+			for (final EntityPlayer player : players) {
 				if (Algorithms.isPositionLookedAtByEntity(player, pos, dotProductThreshold)) return true;
-				pos = pos.add(0, 0.25, 0);
+				pos = pos.add(new Vec3d(0, 0.25, 0));
 			}
 		}
 		return false;
 	}
 
 	public boolean isWithinDistanceOfPlayers(final float distance) {
-		final List<ServerPlayerEntity> players = headEntity.getServer().getPlayerManager().getPlayerList();
-		for (final PlayerEntity player : players) {
-			if (player.getPos().distanceTo(headEntity.getPos()) < distance) return true;
+		final List<EntityPlayerMP> players = headEntity.getServer().getPlayerList().getPlayers();
+		for (final EntityPlayer player : players) {
+			if (player.getPositionVector().distanceTo(headEntity.getPositionVector()) < distance) return true;
 		}
 		return false;
 	}
 
 	public void move(final Vec3d movementOffset) {
-		headEntity.move(MovementType.SELF, movementOffset);
-		bodyEntity.move(MovementType.SELF, movementOffset);
-		armsEntity.move(MovementType.SELF, movementOffset);
-		legsEntity.move(MovementType.SELF, movementOffset);
+		headEntity.move(MoverType.SELF, movementOffset.x, movementOffset.y, movementOffset.z);
+		bodyEntity.move(MoverType.SELF, movementOffset.x, movementOffset.y, movementOffset.z);
+		armsEntity.move(MoverType.SELF, movementOffset.x, movementOffset.y, movementOffset.z);
+		legsEntity.move(MoverType.SELF, movementOffset.x, movementOffset.y, movementOffset.z);
 	}
 
 	public void moveTo(final Vec3d newPos) {
@@ -208,15 +211,15 @@ public class HerobrineEntity {
 	}
 
 	public Vec3d getPos() {
-		return headEntity.getPos();
+		return headEntity.getPositionVector();
 	}
 
 	public Vec3d getEyePos() {
-		return headEntity.getEyePos();
+		return headEntity.getPositionEyes(1);
 	}
 
 	public float getYaw() {
-		return headEntity.getYaw();
+		return headEntity.getRotationYawHead();
 	}
 
 	public Vec3d getRotationVector() {
@@ -224,6 +227,6 @@ public class HerobrineEntity {
 	}
 
 	public BlockPos getBlockPos() {
-		return headEntity.getBlockPos();
+		return headEntity.getPosition();
 	}
 }
